@@ -1,0 +1,162 @@
+---
+description: Standard workflow — Linear tracking, Beads, MCP tools, subagents
+alwaysApply: true
+---
+
+# Standard Workflow
+
+## 1. Track Every Task in Linear
+
+At the start of every session, create a Linear issue for the work being done — even small one-off tasks.
+
+```
+CallMcpTool: user-Linear / save_issue
+  title: "<concise task description>"
+  team: "<user's team>"
+  priority: 3        # 0=None, 1=Urgent, 2=High, 3=Normal, 4=Low
+  assignee: "me"
+```
+
+If the project has Beads (`bd`) installed, also create a local bead and reference the Linear issue:
+
+```bash
+bd create "<same title>" --type=task --priority=2
+```
+
+Include the Linear issue identifier (e.g. `LIN-456`) in commit messages for traceability.
+
+When work is done, close both:
+
+```bash
+bd close <bead-id>
+```
+
+```
+CallMcpTool: user-Linear / save_issue
+  id: "<LIN-xxx>"
+  state: "Done"
+```
+
+## 2. Use Serena for Code Navigation
+
+Prefer Serena's symbolic tools over grep/find for exploring and understanding code:
+
+- `get_symbols_overview` — scan a file's structure without reading every line
+- `find_symbol` — locate classes, functions, methods by name (supports substring matching)
+- `find_referencing_symbols` — trace callers and usages
+- `search_for_pattern` — regex search when you don't know the symbol name
+
+For edits, use `replace_content`, `replace_symbol_body`, or `insert_after_symbol` when they fit better than line-based edits.
+
+## 3. Use Context7 for Library Docs
+
+When working with any library, framework, or SDK, fetch current documentation via the Context7 MCP **before** relying on training data:
+
+```
+CallMcpTool: plugin-context7-plugin-context7 / resolve-library-id
+  libraryName: "next.js"
+
+CallMcpTool: plugin-context7-plugin-context7 / get-library-docs
+  context7CompatibleLibraryID: "/vercel/next.js"
+  topic: "app router middleware"
+```
+
+## 4. Use Parallel Search for Web Lookups
+
+For real-time information, current events, or anything not covered by Context7:
+
+```
+CallMcpTool: user-Parallel Search MCP / web_search_preview
+  query: "postgres 17 new features"
+  search_objective: "what changed in postgres 17"
+```
+
+Use `web_fetch` to drill into specific URLs from search results.
+
+## 5. Use Subagents for Parallel Work
+
+Spawn `Task` subagents when work can be parallelized or isolated:
+
+- **`explore`** — fast read-only codebase exploration (use liberally)
+- **`generalPurpose`** — multi-step research or implementation
+- **`shell`** — git operations, builds, command sequences
+- **`best-of-n-runner`** — isolated experiments in worktrees
+
+Launch independent subagents in the same message for concurrency.
+
+## 6. Use Specialized Agents for Domain Work
+
+Custom agents are installed globally at `~/.cursor/agents/`. Invoke them with `/name` syntax or delegate from subagents. Pick the right specialist for the job:
+
+| Agent | When to use |
+|-------|-------------|
+| `/backend-architect` | API design, service boundaries, DB schemas, caching strategies |
+| `/frontend-developer` | React components, state management, a11y, responsive UI |
+| `/ai-engineer` | LLM integrations, RAG pipelines, vector search, embeddings |
+| `/code-reviewer` | Review recent changes for quality, security, maintainability |
+| `/debugger` | Root-cause analysis from stack traces, error investigation |
+| `/deployment-engineer` | CI/CD pipelines, Docker, Kubernetes, GitHub Actions |
+| `/cloud-architect` | AWS/Azure/GCP infra, Terraform, cost optimization, DR |
+| `/security-engineer` | API security audit, auth vulnerabilities, OWASP Top 10 |
+| `/data-engineer` | ETL/ELT pipelines, data warehousing, Spark, streaming |
+| `/python-pro` | Advanced Python patterns, async, testing, type checking |
+| `/prompt-engineer` | LLM prompt crafting, few-shot, chain-of-thought patterns |
+| `/ui-ux-designer` | User research, wireframes, design systems, accessibility |
+| `/composer` | Post-integration validation — checks API contracts, types, config alignment |
+| `/splitter-agent` | Decomposes complex tasks into which agents to run and in what order |
+
+Use `/splitter-agent` first when a task spans multiple domains — it will output which agents to run and their dependencies.
+
+## 7. Git Safety
+
+**NEVER push to `main` or `master` directly.**
+
+Before any commit or push, check the current branch:
+
+```bash
+git branch --show-current
+```
+
+If on `main` or `master`:
+- **STOP immediately**
+- Ask the user which branch this work should go on
+- Create and switch to that branch before committing
+- Do NOT commit to main/master, even locally
+
+### Branch Naming
+
+Always use one of these prefixes — **never** use personal name prefixes like `alex/` or `username/`:
+
+| Prefix | When to use |
+|--------|-------------|
+| `feature/ONE-XXX-short-desc` | New features |
+| `fix/ONE-XXX-short-desc` | Bug fixes |
+| `chore/ONE-XXX-short-desc` | Maintenance, deps, refactoring |
+
+The Linear issue ID **must** appear in the branch name. Keep the description short and kebab-case.
+
+```bash
+# Good
+git checkout -b feature/ONE-250-partnerships
+
+# Bad — never use personal name prefixes
+git checkout -b alex/one-250-partnerships
+```
+
+### Commit Messages
+
+Commit messages must include the Linear issue identifier:
+
+```
+[ONE-456] Add talent inventory migration
+```
+
+## 8. Session Completion
+
+Before ending any session:
+
+1. Verify you are NOT on main/master
+2. Commit all changes with Linear issue ID in the message
+3. Close or update the Linear issue and bead
+4. `git push` — work is not done until pushed
+5. If follow-up work exists, create new Linear issues for it
