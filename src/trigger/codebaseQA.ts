@@ -108,11 +108,18 @@ function assertContained(root: string, target: string): void {
   if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error('Path traversal blocked');
 }
 
+const MAX_READ_FILE_BYTES = 512_000; // 500KB — avoid loading huge bundles into memory
+
 function execReadFile(baseDir: string, repo: string, filePath: string): string {
   const root = repoRoot(baseDir, repo);
   const abs = path.resolve(root, filePath);
   assertContained(root, abs);
   if (!fs.existsSync(abs)) return `Error: file not found — ${filePath}`;
+  const { size } = fs.statSync(abs);
+  if (size > MAX_READ_FILE_BYTES) {
+    const sizeKB = Math.round(size / 1024);
+    return `Error: file too large (${sizeKB}KB). Try grep_codebase to find specific content instead.`;
+  }
   return fs.readFileSync(abs, 'utf-8')
     .split('\n')
     .map((line, i) => `${i + 1}|${line}`)

@@ -4,6 +4,10 @@ import { tasks } from '@trigger.dev/sdk/v3';
 import { postThreadReply } from '../services/slackClient.js';
 import { TASK_CONFIG } from '../config.js';
 
+interface SlackRequest extends express.Request {
+  rawBody?: Buffer;
+}
+
 export const slackRouter = express.Router();
 
 const DEDUP_CACHE = new Map<string, number>();
@@ -47,7 +51,7 @@ function verifySlackSignature(
     return;
   }
 
-  const rawBody = (req as any).rawBody as Buffer | undefined;
+  const rawBody = (req as SlackRequest).rawBody;
   if (!rawBody) {
     res.status(500).json({ error: 'Cannot verify signature' });
     return;
@@ -69,8 +73,8 @@ function verifySlackSignature(
 
 slackRouter.use(
   express.json({
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf;
+    verify: (req, _res, buf) => {
+      (req as SlackRequest).rawBody = buf;
     },
   }),
 );

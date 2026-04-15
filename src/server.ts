@@ -12,6 +12,9 @@ app.use(express.json());
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
+process.on('SIGTERM', () => server.close());
+process.on('SIGINT', () => server.close());

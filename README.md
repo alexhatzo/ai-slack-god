@@ -119,6 +119,27 @@ npm run trigger:deploy
 
 Set `SLACK_BOT_TOKEN`, `GITHUB_TOKEN`, and `GOOGLE_AI_STUDIO_API_KEY` as environment variables in your Trigger.dev dashboard (they run in the Trigger.dev cloud, not on your server).
 
+### System Dependencies (git & ripgrep)
+
+The Trigger.dev task clones repos with `git` and searches them with `rg` (ripgrep). Neither is included in Trigger.dev's base container image (`node:20-bookworm-slim`).
+
+`trigger.config.ts` uses the `aptGet` build extension to install both automatically at deploy time:
+
+```typescript
+import { aptGet } from "@trigger.dev/build/extensions/core";
+
+export default defineConfig({
+  // ...
+  build: {
+    extensions: [
+      aptGet({ packages: ["git", "ripgrep"] }),
+    ],
+  },
+});
+```
+
+For **local development** (`npm run trigger:dev`), you need `git` and `rg` installed on your machine. On macOS: `brew install ripgrep`. On Ubuntu/Debian: `apt-get install ripgrep`.
+
 ## Key Decisions & Alternatives
 
 ### AI Provider: Gemini vs Anthropic vs OpenAI
