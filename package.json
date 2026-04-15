@@ -1,0 +1,28 @@
+{
+  "name": "ai-slack-god",
+  "version": "1.0.0",
+  "description": "Slack bot that answers natural-language questions about your codebase using AI function calling",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "trigger:dev": "npx trigger.dev@latest dev",
+    "trigger:deploy": "npx trigger.dev@latest deploy"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.0",
+    "@slack/web-api": "^7.9.1",
+    "@trigger.dev/sdk": "^3.3.14",
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.15.3",
+    "tsx": "^4.19.4",
+    "typescript": "^5.7.3"
+  }
+}
